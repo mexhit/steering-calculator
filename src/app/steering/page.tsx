@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { WHEELBASE_DEFAULT } from "@/lib/steering/constants";
+import { SPEED_MAX_KMH, WHEELBASE_DEFAULT } from "@/lib/steering/constants";
 import {
   calculateMetrics,
   getLaneUsageColor,
@@ -147,12 +147,12 @@ export default function App() {
             <SliderRow
               label="Speed"
               min={5}
-              max={120}
+              max={SPEED_MAX_KMH}
               step={1}
               value={speed}
               unit="km/h"
               decimals={0}
-              onChange={setSpeed}
+              onChange={(value) => setSpeed(Math.min(value, SPEED_MAX_KMH))}
             />
             <SliderRow
               label="Steering angle"

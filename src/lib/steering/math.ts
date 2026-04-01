@@ -1,4 +1,4 @@
-import { LANE_WIDTH, TRAJECTORY_STEPS } from "./constants";
+import { LANE_WIDTH, SPEED_MAX_KMH, TRAJECTORY_STEPS } from "./constants";
 
 export type SteeringParams = {
   speed: number;
@@ -28,7 +28,8 @@ export function calculateMetrics({
   duration,
   wheelbase,
 }: SteeringParams): SteeringMetrics {
-  const speedMs = speed / 3.6;
+  const clampedSpeed = Math.min(speed, SPEED_MAX_KMH);
+  const speedMs = clampedSpeed / 3.6;
   const angleRad = (angle * Math.PI) / 180;
   const R = wheelbase / Math.tan(angleRad);
   const arc = speedMs * duration;

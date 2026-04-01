@@ -159,13 +159,13 @@ export default function App() {
             />
             <SliderRow
               label="Steering angle"
-              min={1}
-              max={40}
-              step={1}
+              min={0.1}
+              max={30}
+              step={0.1}
               value={angle}
               unit="°"
-              decimals={0}
-              onChange={setAngle}
+              decimals={1}
+              onChange={(value) => setAngle(Math.max(0.1, Math.min(30, value)))}
             />
             <SliderRow
               label="Duration"

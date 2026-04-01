@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import { SPEED_MAX_KMH, WHEELBASE_DEFAULT } from "@/lib/steering/constants";
 import {
   calculateMetrics,
@@ -13,6 +14,7 @@ import MetricCard from "@/components/steering/MetricCard";
 import TrajectoryCanvas from "@/components/steering/TrajectoryCanvas";
 import SteeringDiagram from "@/components/steering/SteeringDiagram";
 import SteeringWheel from "@/components/steering/SteeringWheel";
+import LanguageSwitcher from "@/components/steering/LanguageSwitcher";
 
 /* =========================
    Shared styles
@@ -33,6 +35,7 @@ const sectionLabelStyle: React.CSSProperties = {
 };
 
 export default function App() {
+  const { t } = useLanguage();
   const [speed, setSpeed] = useState(20);
   const [angle, setAngle] = useState(15);
   const [duration, setDuration] = useState(1.0);
@@ -105,23 +108,32 @@ export default function App() {
             maxWidth: 780,
             margin: "0 auto",
             display: "flex",
-            alignItems: "baseline",
-            gap: 12,
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          <h1
+          <div
             style={{
-              fontSize: 20,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              color: "var(--text)",
+              display: "flex",
+              alignItems: "baseline",
+              gap: 12,
             }}
           >
-            Steering Calculator
-          </h1>
-          <span style={{ fontSize: 13, color: "var(--muted)" }}>
-            lateral displacement &amp; heading change
-          </span>
+            <h1
+              style={{
+                fontSize: 20,
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+                color: "var(--text)",
+              }}
+            >
+              {t.title}
+            </h1>
+            <span style={{ fontSize: 13, color: "var(--muted)" }}>
+              {t.subtitle}
+            </span>
+          </div>
+          <LanguageSwitcher />
         </div>
       </div>
 
@@ -144,11 +156,11 @@ export default function App() {
             }}
           >
             <div style={{ ...sectionLabelStyle, marginBottom: 18 }}>
-              Parameters
+              {t.parameters}
             </div>
 
             <SliderRow
-              label="Speed"
+              label={t.speed}
               min={5}
               max={SPEED_MAX_KMH}
               step={1}
@@ -158,7 +170,7 @@ export default function App() {
               onChange={(value) => setSpeed(Math.min(value, SPEED_MAX_KMH))}
             />
             <SliderRow
-              label="Steering angle"
+              label={t.steeringAngle}
               min={0.1}
               max={30}
               step={0.1}
@@ -168,7 +180,7 @@ export default function App() {
               onChange={(value) => setAngle(Math.max(0.1, Math.min(30, value)))}
             />
             <SliderRow
-              label="Duration"
+              label={t.duration}
               min={0.1}
               max={5}
               step={0.1}
@@ -178,7 +190,7 @@ export default function App() {
               onChange={setDuration}
             />
             <SliderRow
-              label="Wheelbase"
+              label={t.wheelbase}
               min={2.0}
               max={3.5}
               step={0.1}
@@ -209,7 +221,7 @@ export default function App() {
               }}
             >
               <div style={{ ...sectionLabelStyle, marginBottom: 8 }}>
-                Wheel angle
+                {t.wheelAngle}
               </div>
               <SteeringDiagram angle={angle} />
             </div>
@@ -230,7 +242,7 @@ export default function App() {
               }}
             >
               <div style={{ ...sectionLabelStyle, marginBottom: 8 }}>
-                Steering wheel
+                {t.steeringWheel}
               </div>
               <SteeringWheel angle={steeringWheel} />
             </div>
@@ -239,34 +251,34 @@ export default function App() {
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <MetricCard
-            label="Turn radius"
+            label={t.turnRadius}
             value={metrics.R.toFixed(1)}
             unit="m"
           />
           <MetricCard
-            label="Arc distance"
+            label={t.arcDistance}
             value={metrics.arc.toFixed(2)}
             unit="m"
           />
           <MetricCard
-            label="Lateral shift"
+            label={t.lateralShift}
             value={metrics.lateral.toFixed(2)}
             unit="m"
             color="#1D9E75"
           />
           <MetricCard
-            label="Steering wheel angle"
+            label={t.steeringWheelAngle}
             value={steeringWheel.toFixed(1)}
             unit="°"
           />
           <MetricCard
-            label="Heading change"
+            label={t.headingChange}
             value={metrics.headingDeg.toFixed(1)}
             unit="°"
             color="#D85A30"
           />
           <MetricCard
-            label="Lane usage"
+            label={t.laneUsage}
             value={metrics.laneUsage.toFixed(0)}
             unit="%"
             color={laneColor}
@@ -275,7 +287,7 @@ export default function App() {
 
         <div style={{ ...surfaceCardStyle, padding: 16 }}>
           <div style={{ ...sectionLabelStyle, marginBottom: 12 }}>
-            Trajectory
+            {t.trajectory}
           </div>
           <TrajectoryCanvas params={params} />
         </div>

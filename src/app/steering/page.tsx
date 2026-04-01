@@ -12,6 +12,7 @@ import SliderRow from "@/components/steering/SliderRow";
 import MetricCard from "@/components/steering/MetricCard";
 import TrajectoryCanvas from "@/components/steering/TrajectoryCanvas";
 import SteeringDiagram from "@/components/steering/SteeringDiagram";
+import SteeringWheel from "@/components/steering/SteeringWheel";
 
 /* =========================
    Shared styles
@@ -197,19 +198,41 @@ export default function App() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: 8,
+              gap: 16,
             }}
           >
-            <div style={sectionLabelStyle}>Wheel angle</div>
-            <SteeringDiagram angle={angle} />
             <div
               style={{
-                fontSize: 12,
-                color: "var(--muted)",
-                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
               }}
             >
-              R = L / tan(δ)
+              <div style={{ ...sectionLabelStyle, marginBottom: 8 }}>
+                Wheel angle
+              </div>
+              <SteeringDiagram angle={angle} />
+            </div>
+
+            <div
+              style={{
+                borderTop: "1px solid var(--border)",
+                width: "100%",
+                height: 0,
+              }}
+            />
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div style={{ ...sectionLabelStyle, marginBottom: 8 }}>
+                Steering wheel
+              </div>
+              <SteeringWheel angle={steeringWheel} />
             </div>
           </div>
         </div>

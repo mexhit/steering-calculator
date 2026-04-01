@@ -5,6 +5,7 @@ import { SPEED_MAX_KMH, WHEELBASE_DEFAULT } from "@/lib/steering/constants";
 import {
   calculateMetrics,
   getLaneUsageColor,
+  steeringWheelToRoadWheelAngle,
   SteeringParams,
 } from "@/lib/steering/math";
 import SliderRow from "@/components/steering/SliderRow";
@@ -38,6 +39,7 @@ export default function App() {
 
   const params: SteeringParams = { speed, angle, duration, wheelbase };
   const metrics = calculateMetrics(params);
+  const steeringWheel = steeringWheelToRoadWheelAngle(angle);
   const laneColor = getLaneUsageColor(metrics.laneUsage);
 
   return (
@@ -228,6 +230,11 @@ export default function App() {
             value={metrics.lateral.toFixed(2)}
             unit="m"
             color="#1D9E75"
+          />
+          <MetricCard
+            label="Steering wheel angle"
+            value={steeringWheel.toFixed(1)}
+            unit="°"
           />
           <MetricCard
             label="Heading change"

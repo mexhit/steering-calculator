@@ -22,6 +22,22 @@ export type Point = {
   y: number;
 };
 
+export function steeringWheelToRoadWheelAngle(
+  roadWheelAngleDeg: number,
+): number {
+  const STEERING_RATIO = 17.0;
+  const LOCK_TO_LOCK_TURNS = 2.75;
+  const MAX_STEERING_DEG = (LOCK_TO_LOCK_TURNS / 2) * 360; // ±495°
+  const MAX_ROAD_WHEEL_DEG = MAX_STEERING_DEG / STEERING_RATIO; // ±29.118°
+
+  const clampedRoadWheel = Math.max(
+    -MAX_ROAD_WHEEL_DEG,
+    Math.min(MAX_ROAD_WHEEL_DEG, roadWheelAngleDeg),
+  );
+
+  return parseFloat((clampedRoadWheel * STEERING_RATIO).toFixed(3));
+}
+
 export function calculateMetrics({
   speed,
   angle,

@@ -13,7 +13,7 @@ export const en = {
   lateralShift: "Lateral shift",
   steeringWheelAngle: "Steering wheel angle",
   headingChange: "Heading change",
-  laneUsage: "Lane usage",
+  rearSideLateralShift: "Rear side lateral shift",
   trajectory: "Trajectory",
 };
 
@@ -32,7 +32,7 @@ export const sq = {
   lateralShift: "Zhvendosja anësore",
   steeringWheelAngle: "Këndi i timonit",
   headingChange: "Kendi i makines",
-  laneUsage: "Përdorimi i korsi",
+  rearSideLateralShift: "Zhvendosja anesore e pjeses se pasme",
   trajectory: "Trajektorja",
 };
 

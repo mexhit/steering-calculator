@@ -1,4 +1,4 @@
-import { LANE_WIDTH, SPEED_MAX_KMH, TRAJECTORY_STEPS } from "./constants";
+import { SPEED_MAX_KMH, TRAJECTORY_STEPS } from "./constants";
 
 export type SteeringParams = {
   speed: number;
@@ -14,7 +14,7 @@ export type SteeringMetrics = {
   forward: number;
   theta: number;
   headingDeg: number;
-  laneUsage: number;
+  rearSideLateralShift: number;
 };
 
 export type Point = {
@@ -52,12 +52,17 @@ export function calculateMetrics({
 
   const R = isStraight ? Number.POSITIVE_INFINITY : wheelbase / Math.tan(angleRad);
   const theta = isStraight ? 0 : arc / R;
-  const lateral = isStraight ? 0 : R * (1 - Math.cos(theta));
+  const rearAxleLateral = isStraight ? 0 : R * (1 - Math.cos(theta));
+  const lateral = isStraight
+    ? 0
+    : rearAxleLateral + (wheelbase / 2) * Math.sin(theta);
   const forward = isStraight ? arc : R * Math.sin(theta);
   const headingDeg = isStraight ? 0 : (theta * 180) / Math.PI;
-  const laneUsage = isStraight ? 0 : Math.min((lateral / LANE_WIDTH) * 100, 999);
+  const rearSideLateralShift = isStraight
+    ? 0
+    : lateral + (wheelbase / 2) * Math.sin(theta);
 
-  return { R, arc, lateral, forward, theta, headingDeg, laneUsage };
+  return { R, arc, lateral, forward, theta, headingDeg, rearSideLateralShift };
 }
 
 export function buildTrajectory({
@@ -82,10 +87,4 @@ export function buildTrajectory({
       y: R * (1 - Math.cos(t)),
     };
   });
-}
-
-export function getLaneUsageColor(laneUsage: number): string {
-  if (laneUsage > 80) return "#E24B4A";
-  if (laneUsage > 50) return "#EF9F27";
-  return "#1D9E75";
 }

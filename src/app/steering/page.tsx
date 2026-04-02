@@ -5,7 +5,6 @@ import { useLanguage } from "@/context/LanguageContext";
 import { SPEED_MAX_KMH, WHEELBASE_DEFAULT } from "@/lib/steering/constants";
 import {
   calculateMetrics,
-  getLaneUsageColor,
   steeringWheelToRoadWheelAngle,
   SteeringParams,
 } from "@/lib/steering/math";
@@ -39,12 +38,11 @@ export default function App() {
   const [speed, setSpeed] = useState(20);
   const [angle, setAngle] = useState(15);
   const [duration, setDuration] = useState(1.0);
-  const [wheelbase, setWheelbase] = useState(WHEELBASE_DEFAULT);
+  const [wheelbase] = useState(WHEELBASE_DEFAULT);
 
   const params: SteeringParams = { speed, angle, duration, wheelbase };
   const metrics = calculateMetrics(params);
   const steeringWheel = steeringWheelToRoadWheelAngle(angle);
-  const laneColor = getLaneUsageColor(metrics.laneUsage);
 
   return (
     <div
@@ -196,8 +194,9 @@ export default function App() {
               step={0.1}
               value={wheelbase}
               unit="m"
-              decimals={1}
-              onChange={setWheelbase}
+              decimals={3}
+              onChange={() => {}}
+              disabled
             />
           </div>
 
@@ -278,10 +277,10 @@ export default function App() {
             color="#D85A30"
           />
           <MetricCard
-            label={t.laneUsage}
-            value={metrics.laneUsage.toFixed(0)}
-            unit="%"
-            color={laneColor}
+            label={t.rearSideLateralShift}
+            value={metrics.rearSideLateralShift.toFixed(2)}
+            unit="m"
+            color="#EF9F27"
           />
         </div>
 

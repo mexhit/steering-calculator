@@ -7,6 +7,7 @@ type SliderRowProps = {
   unit: string;
   decimals: number;
   onChange: (value: number) => void;
+  disabled?: boolean;
 };
 
 export default function SliderRow({
@@ -18,6 +19,7 @@ export default function SliderRow({
   unit,
   decimals,
   onChange,
+  disabled = false,
 }: SliderRowProps) {
   return (
     <div
@@ -45,8 +47,14 @@ export default function SliderRow({
         max={max}
         step={step}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        style={{ flex: 1, accentColor: "var(--accent)" }}
+        style={{
+          flex: 1,
+          accentColor: "var(--accent)",
+          opacity: disabled ? 0.6 : 1,
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
       />
 
       <span

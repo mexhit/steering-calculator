@@ -1,16 +1,32 @@
+import { Suspense, useEffect } from "react";
+import { useLoader } from "@react-three/fiber";
+import type { Group, Material, Mesh } from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+
+const renaultClioMtlPath =
+  "/models/Renault_Clio_5door_2010/Renault_Clio_5door_2010.mtl";
+const renaultClioObjPath =
+  "/models/Renault_Clio_5door_2010/Renault_Clio_5door_2010.obj";
+const hondaPcxGlbPath = "/models/honda-pcx-2/source/PCXDLXABS.glb";
+
+type VehicleVariant = "box" | "renault-clio" | "honda-pcx";
+
 type VehicleMeshProps = {
   position: [number, number, number];
   color: string;
   size: [number, number, number];
   yaw?: number;
+  variant?: VehicleVariant;
 };
 
-export default function VehicleMesh({
+function BoxVehicleMesh({
   position,
   color,
   size,
   yaw = 0,
-}: VehicleMeshProps) {
+}: Omit<VehicleMeshProps, "variant">) {
   return (
     <group position={position} rotation={[0, Math.PI / 2 + yaw, 0]}>
       <mesh castShadow>
@@ -25,3 +41,145 @@ export default function VehicleMesh({
     </group>
   );
 }
+
+function RenaultClioMesh({
+  position,
+  size,
+  yaw = 0,
+}: Omit<VehicleMeshProps, "color" | "variant">) {
+  const groundClearanceOffsetMeters = 0.25;
+  const modelWidthUnits = 205.87;
+  const modelHeightUnits = 170.36;
+  const modelHalfHeightUnits = modelHeightUnits / 2;
+  const materials = useLoader(MTLLoader, renaultClioMtlPath);
+  materials.preload();
+  const object = useLoader(OBJLoader, renaultClioObjPath, (loader) => {
+    loader.setMaterials(materials);
+  }) as Group;
+
+  const uniformScale = size[0] / modelWidthUnits;
+  const renderedHeight = modelHeightUnits * uniformScale;
+  const groundedPosition: [number, number, number] = [
+    position[0],
+    position[1] - renderedHeight / 2 + groundClearanceOffsetMeters,
+    position[2],
+  ];
+
+  useEffect(() => {
+    object.traverse((child) => {
+      child.castShadow = true;
+      child.receiveShadow = true;
+
+      const mesh = child as Mesh;
+      if (!("isMesh" in mesh) || !mesh.isMesh) {
+        return;
+      }
+
+      const materialList = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+
+      materialList.forEach((material) => {
+        if (!material) {
+          return;
+        }
+
+        const nextMaterial = material as Material & {
+          name?: string;
+          opacity?: number;
+          transparent?: boolean;
+          depthWrite?: boolean;
+        };
+        const materialName = nextMaterial.name?.toLowerCase() ?? "";
+        const isGlass = materialName.includes("glass");
+
+        nextMaterial.transparent = isGlass;
+        nextMaterial.opacity = isGlass
+          ? Math.min(nextMaterial.opacity ?? 0.3, 0.35)
+          : 1;
+        nextMaterial.depthWrite = !isGlass;
+        nextMaterial.needsUpdate = true;
+      });
+    });
+  }, [object]);
+
+  return (
+    <group position={groundedPosition} rotation={[0, Math.PI / 2 + yaw, 0]}>
+      <group rotation={[-Math.PI / 2, 0, 0]} scale={uniformScale}>
+        <group position={[0, -modelHalfHeightUnits, 0]}>
+          <primitive object={object} />
+        </group>
+      </group>
+    </group>
+  );
+}
+
+function HondaPcxMesh({
+  position,
+  size,
+  yaw = 0,
+}: Omit<VehicleMeshProps, "color" | "variant">) {
+  const groundClearanceOffsetMeters = 0.08;
+  const modelWidthMeters = 0.74;
+  const modelHeightMeters = 1.105;
+  const gltf = useLoader(GLTFLoader, hondaPcxGlbPath);
+  const object = gltf.scene;
+  const uniformScale = size[0] / modelWidthMeters;
+  const renderedHeight = modelHeightMeters * uniformScale;
+  const groundedPosition: [number, number, number] = [
+    position[0],
+    position[1] - renderedHeight / 2 + groundClearanceOffsetMeters,
+    position[2],
+  ];
+
+  useEffect(() => {
+    object.traverse((child) => {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+  }, [object]);
+
+  return (
+    <group position={groundedPosition} rotation={[0, Math.PI / 2 + yaw, 0]}>
+      <group rotation={[0, -Math.PI / 2, 0]} scale={uniformScale}>
+        <primitive object={object} />
+      </group>
+    </group>
+  );
+}
+
+export default function VehicleMesh({
+  position,
+  color,
+  size,
+  yaw = 0,
+  variant = "box",
+}: VehicleMeshProps) {
+  if (variant === "renault-clio") {
+    return (
+      <Suspense fallback={null}>
+        <RenaultClioMesh position={position} size={size} yaw={yaw} />
+      </Suspense>
+    );
+  }
+
+  if (variant === "honda-pcx") {
+    return (
+      <Suspense fallback={null}>
+        <HondaPcxMesh position={position} size={size} yaw={yaw} />
+      </Suspense>
+    );
+  }
+
+  return (
+    <BoxVehicleMesh position={position} color={color} size={size} yaw={yaw} />
+  );
+}
+
+useLoader.preload(MTLLoader, renaultClioMtlPath);
+useLoader.preload(OBJLoader, renaultClioObjPath, async (loader) => {
+  const preloadMaterials = await new MTLLoader().loadAsync(renaultClioMtlPath);
+  preloadMaterials.preload();
+  loader.setMaterials(preloadMaterials);
+});
+useLoader.preload(GLTFLoader, hondaPcxGlbPath);

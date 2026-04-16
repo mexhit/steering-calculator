@@ -5,10 +5,13 @@ export type OvertakePhase =
   | "return-right"
   | "complete";
 
+export type LaneSide = "left" | "right";
+
 export type VehicleState = {
   x: number;
   y: number;
   z: number;
+  heading: number;
   speed: number;
   width: number;
   length: number;
@@ -16,11 +19,29 @@ export type VehicleState = {
 
 export type SimulationConfig = {
   carSpeedKmh: number;
+  carSteeringAngleDeg: number;
+  carSteeringDelaySeconds?: number;
   bikeStartSpeedKmh: number;
   bikeTargetSpeedKmh: number;
   bikeAcceleration: number;
   reactionTimeSeconds: number;
   laneChangeRate: number;
+  roadLayout: RoadLayout;
+  initialLane: LaneSide;
+  initialCarZ?: number;
+  initialBikeZ?: number;
+  fixedBikeZ?: number;
+};
+
+export type RoadLayout = {
+  laneWidth: number;
+  medianWidth: number;
+  sidewalkWidth: number;
+  totalRoadWidth: number;
+  laneDividerZ: number;
+  outerEdgeZ: number;
+  rightLaneCenter: number;
+  leftLaneCenter: number;
 };
 
 export type SimulationSnapshot = {

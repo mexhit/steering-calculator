@@ -1,14 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   defaultSimulationConfig,
-  LANES,
+  legacyRoadLayout,
 } from "@/simulation/engine/physics";
 import { useSimulation } from "@/simulation/engine/useSimulation";
 import SimulationScene, {
   CameraMode,
 } from "@/simulation/3d/SimulationScene";
+import { LaneSide, RoadLayout } from "@/simulation/engine/types";
 
 const panelStyle: React.CSSProperties = {
   border: "1px solid rgba(255,255,255,0.1)",
@@ -75,7 +77,29 @@ function Slider({ label, value, min, max, step, unit, onChange }: SliderProps) {
   );
 }
 
-export default function SimulationDashboard() {
+type SimulationDashboardProps = {
+  title?: string;
+  subtitle?: string;
+  roadLayout?: RoadLayout;
+  initialLane?: LaneSide;
+  carSteeringAngleDeg?: number;
+  carSteeringDelaySeconds?: number;
+  initialCarZ?: number;
+  initialBikeZ?: number;
+  fixedBikeZ?: number;
+};
+
+export default function SimulationDashboard({
+  title = "3D Overtaking Simulation",
+  subtitle = "Motorcycle overtake with lane shift, camera presets, and safety analysis",
+  roadLayout = legacyRoadLayout,
+  initialLane = "right",
+  carSteeringAngleDeg = defaultSimulationConfig.carSteeringAngleDeg,
+  carSteeringDelaySeconds = defaultSimulationConfig.carSteeringDelaySeconds ?? 0,
+  initialCarZ,
+  initialBikeZ,
+  fixedBikeZ,
+}: SimulationDashboardProps) {
   const [carSpeedKmh, setCarSpeedKmh] = useState(defaultSimulationConfig.carSpeedKmh);
   const [bikeTargetSpeedKmh, setBikeTargetSpeedKmh] = useState(
     defaultSimulationConfig.bikeTargetSpeedKmh,
@@ -89,12 +113,21 @@ export default function SimulationDashboard() {
   const { snapshot, running, setRunning, reset } = useSimulation({
     ...defaultSimulationConfig,
     carSpeedKmh,
+    carSteeringAngleDeg,
+    carSteeringDelaySeconds,
     bikeTargetSpeedKmh,
     reactionTimeSeconds,
+    roadLayout,
+    initialLane,
+    initialCarZ,
+    initialBikeZ,
+    fixedBikeZ,
   });
 
   const distanceBetweenCenters = Math.abs(snapshot.bike.x - snapshot.car.x).toFixed(1);
-  const laneOffset = Math.abs(snapshot.bike.z - LANES.right).toFixed(2);
+  const referenceLaneCenter =
+    initialLane === "left" ? roadLayout.leftLaneCenter : roadLayout.rightLaneCenter;
+  const laneOffset = Math.abs(snapshot.bike.z - referenceLaneCenter).toFixed(2);
   const ttcLabel =
     Number.isFinite(snapshot.timeToCollision) && snapshot.timeToCollision < 99
       ? `${snapshot.timeToCollision.toFixed(1)} s`
@@ -130,13 +163,37 @@ export default function SimulationDashboard() {
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: 22 }}>3D Overtaking Simulation</h1>
+            <h1 style={{ margin: 0, fontSize: 22 }}>{title}</h1>
             <div style={{ color: "#96a5c2", fontSize: 13, marginTop: 4 }}>
-              Motorcycle overtake with lane shift, camera presets, and safety analysis
+              {subtitle}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Link
+              href="/simulation"
+              style={{
+                padding: "8px 12px",
+                color: "#edf3ff",
+                textDecoration: "none",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+              }}
+            >
+              Base
+            </Link>
+            <Link
+              href="/simulation-lane-3-5"
+              style={{
+                padding: "8px 12px",
+                color: "#edf3ff",
+                textDecoration: "none",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 10,
+              }}
+            >
+              Lane 3.5 m
+            </Link>
             <button
               style={{ padding: "8px 12px" }}
               onClick={() => setRunning(!running)}
@@ -163,6 +220,7 @@ export default function SimulationDashboard() {
               snapshot={snapshot}
               cameraMode={cameraMode}
               cameraDistance={cameraDistance}
+              roadLayout={roadLayout}
             />
             <div
               style={{
@@ -236,6 +294,12 @@ export default function SimulationDashboard() {
               <div style={{ fontSize: 12, color: "#90a0bf" }}>
                 Orbit mode supports drag/zoom. Other modes auto-track overtaking from fixed
                 angles.
+              </div>
+              <div style={{ fontSize: 12, color: "#90a0bf" }}>
+                Lane width:{" "}
+                <strong style={{ color: "#9dd8ff" }}>
+                  {roadLayout.laneWidth.toFixed(1)} m
+                </strong>
               </div>
             </div>
           </div>

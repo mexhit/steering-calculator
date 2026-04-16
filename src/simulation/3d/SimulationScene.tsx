@@ -6,8 +6,7 @@ import { OrbitControls } from "@react-three/drei";
 import { PCFShadowMap, Vector3 } from "three";
 import Road from "@/simulation/3d/Road";
 import VehicleMesh from "@/simulation/3d/VehicleMesh";
-import { CAR_LEFT_SHIFT_ANGLE_DEG } from "@/simulation/engine/physics";
-import { SimulationSnapshot } from "@/simulation/engine/types";
+import { RoadLayout, SimulationSnapshot } from "@/simulation/engine/types";
 
 export type CameraMode = "orbit" | "chase-bike" | "follow-car" | "top";
 
@@ -59,15 +58,15 @@ type SimulationSceneProps = {
   snapshot: SimulationSnapshot;
   cameraMode: CameraMode;
   cameraDistance: number;
+  roadLayout: RoadLayout;
 };
 
 export default function SimulationScene({
   snapshot,
   cameraMode,
   cameraDistance,
+  roadLayout,
 }: SimulationSceneProps) {
-  const carYaw = (CAR_LEFT_SHIFT_ANGLE_DEG * Math.PI) / 180;
-
   return (
     <Canvas
       shadows={{ type: PCFShadowMap }}
@@ -84,22 +83,25 @@ export default function SimulationScene({
         shadow-mapSize-height={1024}
       />
 
-      <Road />
+      <Road layout={roadLayout} />
 
       <VehicleMesh
         position={[snapshot.car.x, snapshot.car.y + 0.55, snapshot.car.z]}
         size={[snapshot.car.width, 1.1, snapshot.car.length]}
         color="#3b82f6"
-        yaw={carYaw}
+        yaw={-snapshot.car.heading}
+        variant="renault-clio"
       />
       <VehicleMesh
         position={[snapshot.bike.x, snapshot.bike.y + 0.4, snapshot.bike.z]}
         size={[snapshot.bike.width, 0.8, snapshot.bike.length]}
         color="#ef4444"
+        yaw={-snapshot.bike.heading}
+        variant="honda-pcx"
       />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
-        <planeGeometry args={[460, 120]} />
+        <planeGeometry args={[460, Math.max(120, roadLayout.totalRoadWidth + 40)]} />
         <meshStandardMaterial color="#121827" />
       </mesh>
 

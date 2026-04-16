@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import * as THREE from "three";
+import { RoadLayout } from "@/simulation/engine/types";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -201,8 +202,14 @@ function SolidLine({
 //  Traffic lanes: 2 lanes each side, divided by dashed line
 //  Sidewalks: outer edges
 
-export default function Road() {
+type RoadProps = {
+  layout: RoadLayout;
+};
+
+export default function Road({ layout }: RoadProps) {
   const roadLength = 320;
+  const medianHalf = layout.medianWidth / 2;
+  const sidewalkCenterZ = layout.outerEdgeZ + layout.sidewalkWidth / 2;
 
   const archPositions = useMemo<number[]>(() => {
     const positions: number[] = [];
@@ -231,26 +238,26 @@ export default function Road() {
     <group>
       {/* ── OUTER ROAD SURFACE ── */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[roadLength, 20]} />
+        <planeGeometry args={[roadLength, layout.totalRoadWidth]} />
         <meshStandardMaterial color="#2a2e38" roughness={0.95} />
       </mesh>
 
       {/* ── MEDIAN BASE ── */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <planeGeometry args={[roadLength, 3.6]} />
+        <planeGeometry args={[roadLength, layout.medianWidth]} />
         <meshStandardMaterial color="#1e2128" roughness={0.9} />
       </mesh>
 
       {/* ── MEDIAN GREEN STRIP ── */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
-        <planeGeometry args={[roadLength, 3.2]} />
+        <planeGeometry args={[roadLength, Math.max(layout.medianWidth - 0.4, 1.2)]} />
         <meshStandardMaterial color="#2d5e35" roughness={1} />
       </mesh>
 
       {/* ── SIDEWALKS ── */}
-      {([-9.2, 9.2] as number[]).map((z) => (
+      {([-sidewalkCenterZ, sidewalkCenterZ] as number[]).map((z) => (
         <mesh key={z} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, z]}>
-          <planeGeometry args={[roadLength, 1.6]} />
+          <planeGeometry args={[roadLength, layout.sidewalkWidth]} />
           <meshStandardMaterial color="#888c94" roughness={0.9} />
         </mesh>
       ))}
@@ -258,15 +265,27 @@ export default function Road() {
       {/* ── LANE MARKINGS ── */}
 
       {/* Dashed white: lane divider at center of each carriageway */}
-      <DashedLine z={-4.625} dashLength={2.5} gap={2} count={55} y={0.02} />
-      <DashedLine z={4.625} dashLength={2.5} gap={2} count={55} y={0.02} />
+      <DashedLine
+        z={-layout.laneDividerZ}
+        dashLength={2.5}
+        gap={2}
+        count={55}
+        y={0.02}
+      />
+      <DashedLine
+        z={layout.laneDividerZ}
+        dashLength={2.5}
+        gap={2}
+        count={55}
+        y={0.02}
+      />
 
       {/* Solid white: outer road edge */}
-      <SolidLine z={-7.4} color="#d9d6be" width={0.16} y={0.02} />
-      <SolidLine z={7.4} color="#d9d6be" width={0.16} y={0.02} />
+      <SolidLine z={-layout.outerEdgeZ} color="#d9d6be" width={0.16} y={0.02} />
+      <SolidLine z={layout.outerEdgeZ} color="#d9d6be" width={0.16} y={0.02} />
 
       {/* ── MEDIAN CURB EDGES ── */}
-      {([-1.85, 1.85] as number[]).map((z) => (
+      {([-medianHalf, medianHalf] as number[]).map((z) => (
         <mesh key={z} position={[0, 0.06, z]}>
           <boxGeometry args={[roadLength, 0.12, 0.1]} />
           <meshStandardMaterial color="#c8c0a0" roughness={0.8} />
@@ -309,14 +328,14 @@ export default function Road() {
       {planterPositions.map((x) => (
         <PlanterBox
           key={`planter-n-${x}`}
-          position={[x, 0.02, -1.3]}
+          position={[x, 0.02, -(medianHalf - 0.5)]}
           length={3.5}
         />
       ))}
       {planterPositions.map((x) => (
         <PlanterBox
           key={`planter-s-${x}`}
-          position={[x, 0.02, 1.3]}
+          position={[x, 0.02, medianHalf - 0.5]}
           length={3.5}
         />
       ))}
@@ -325,7 +344,7 @@ export default function Road() {
       {sidewalkTreeXPositions.map((x) => (
         <Tree
           key={`stree-n-${x}`}
-          position={[x, 0.03, -9.0]}
+          position={[x, 0.03, -sidewalkCenterZ]}
           scale={1.0}
           leafColor="#265c30"
         />
@@ -333,7 +352,7 @@ export default function Road() {
       {sidewalkTreeXPositions.map((x) => (
         <Tree
           key={`stree-s-${x}`}
-          position={[x, 0.03, 9.0]}
+          position={[x, 0.03, sidewalkCenterZ]}
           scale={1.0}
           leafColor="#265c30"
         />

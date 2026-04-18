@@ -8,8 +8,10 @@ import {
 } from "@/simulation/engine/types";
 
 const toMps = (kmh: number) => kmh / 3.6;
-export const CAR_LEFT_SHIFT_ANGLE_DEG = 3;
+export const CAR_LEFT_SHIFT_ANGLE_DEG = 5;
 const CAR_WHEELBASE_METERS = 2.7;
+export const MAX_SIMULATION_TIME_SECONDS = 5;
+const SIMULATION_STEP_SECONDS = 1 / 120;
 
 const getLaneCenter = (roadLayout: RoadLayout, lane: LaneSide) =>
   lane === "left" ? roadLayout.leftLaneCenter : roadLayout.rightLaneCenter;
@@ -230,4 +232,19 @@ export const advanceSnapshot = (
     collision,
     warning,
   };
+};
+
+export const getSnapshotAtTime = (
+  config: SimulationConfig,
+  targetTime: number,
+): SimulationSnapshot => {
+  const clampedTime = Math.max(0, Math.min(MAX_SIMULATION_TIME_SECONDS, targetTime));
+  let snapshot = createInitialSnapshot(config);
+
+  while (snapshot.time < clampedTime) {
+    const step = Math.min(SIMULATION_STEP_SECONDS, clampedTime - snapshot.time);
+    snapshot = advanceSnapshot(snapshot, step, config);
+  }
+
+  return snapshot;
 };

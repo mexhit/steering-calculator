@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   defaultSimulationConfig,
   legacyRoadLayout,
@@ -109,20 +109,39 @@ export default function SimulationDashboard({
   );
   const [cameraMode, setCameraMode] = useState<CameraMode>("orbit");
   const [cameraDistance, setCameraDistance] = useState(8);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const simulationConfig = useMemo(
+    () => ({
+      ...defaultSimulationConfig,
+      carSpeedKmh,
+      carSteeringAngleDeg,
+      carSteeringDelaySeconds,
+      bikeTargetSpeedKmh,
+      reactionTimeSeconds,
+      roadLayout,
+      initialLane,
+      initialCarZ,
+      initialBikeZ,
+      fixedBikeZ,
+    }),
+    [
+      carSpeedKmh,
+      carSteeringAngleDeg,
+      carSteeringDelaySeconds,
+      bikeTargetSpeedKmh,
+      reactionTimeSeconds,
+      roadLayout,
+      initialLane,
+      initialCarZ,
+      initialBikeZ,
+      fixedBikeZ,
+    ],
+  );
 
-  const { snapshot, running, setRunning, reset } = useSimulation({
-    ...defaultSimulationConfig,
-    carSpeedKmh,
-    carSteeringAngleDeg,
-    carSteeringDelaySeconds,
-    bikeTargetSpeedKmh,
-    reactionTimeSeconds,
-    roadLayout,
-    initialLane,
-    initialCarZ,
-    initialBikeZ,
-    fixedBikeZ,
-  });
+  const { snapshot, running, setRunning, reset, seekTo, duration } = useSimulation(
+    simulationConfig,
+    playbackRate,
+  );
 
   const distanceBetweenCenters = Math.abs(snapshot.bike.x - snapshot.car.x).toFixed(1);
   const referenceLaneCenter =
@@ -138,6 +157,8 @@ export default function SimulationDashboard({
     : snapshot.warning
       ? "warning"
       : "neutral";
+  const timelineProgress =
+    duration === 0 ? 0 : (snapshot.time / duration) * 100;
 
   return (
     <div
@@ -169,7 +190,7 @@ export default function SimulationDashboard({
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <Link
               href="/simulation"
               style={{
@@ -203,10 +224,54 @@ export default function SimulationDashboard({
             <button style={{ padding: "8px 12px" }} onClick={reset}>
               Reset
             </button>
+            <label style={{ display: "grid", gap: 4, fontSize: 12, color: "#96a5c2" }}>
+              Speed
+              <select
+                value={playbackRate}
+                onChange={(event) => setPlaybackRate(Number(event.target.value))}
+                style={{ padding: 8, borderRadius: 10 }}
+              >
+                <option value={0.25}>0.25x</option>
+                <option value={0.5}>0.5x</option>
+                <option value={1}>1x</option>
+                <option value={1.5}>1.5x</option>
+                <option value={2}>2x</option>
+                <option value={3}>3x</option>
+              </select>
+            </label>
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 14 }}>
+          <div style={{ ...panelStyle, display: "grid", gap: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                fontSize: 13,
+                color: "#cdd8ee",
+              }}
+            >
+              <span>Timeline</span>
+              <span>
+                {snapshot.time.toFixed(2)}s / {duration.toFixed(1)}s
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={duration}
+              step={0.01}
+              value={snapshot.time}
+              onChange={(event) => seekTo(Number(event.target.value))}
+            />
+            <div style={{ fontSize: 12, color: "#90a0bf" }}>
+              Scrub the simulation like a video. Playback speed changes how fast time advances.
+              Progress: <strong style={{ color: "#9dd8ff" }}>{timelineProgress.toFixed(0)}%</strong>
+            </div>
+          </div>
+
           <div
             style={{
               ...panelStyle,

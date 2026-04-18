@@ -86,22 +86,28 @@ export default function SimulationScene({
       <Road layout={roadLayout} />
 
       <VehicleMesh
-        position={[snapshot.car.x, snapshot.car.y + 0.55, snapshot.car.z]}
+        position={[snapshot.car.x, snapshot.car.y + 0.55, snapshot.car.z - 0.28]}
         size={[snapshot.car.width, 1.1, snapshot.car.length]}
         color="#3b82f6"
         yaw={-snapshot.car.heading}
         variant="renault-clio"
       />
       <VehicleMesh
-        position={[snapshot.bike.x, snapshot.bike.y + 0.4, snapshot.bike.z]}
+        position={[snapshot.bike.x, snapshot.bike.y + 0.76, snapshot.bike.z]}
         size={[snapshot.bike.width, 0.8, snapshot.bike.length]}
-        color="#ef4444"
+        color="#f1f3f5"
         yaw={-snapshot.bike.heading}
         variant="honda-pcx"
       />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]} receiveShadow>
-        <planeGeometry args={[460, Math.max(120, roadLayout.totalRoadWidth + 40)]} />
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, -0.04, 0]}
+        receiveShadow
+      >
+        <planeGeometry
+          args={[460, Math.max(120, roadLayout.totalRoadWidth + 40)]}
+        />
         <meshStandardMaterial color="#121827" />
       </mesh>
 

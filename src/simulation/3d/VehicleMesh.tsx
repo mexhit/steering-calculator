@@ -10,6 +10,7 @@ const renaultClioMtlPath =
 const renaultClioObjPath =
   "/models/Renault_Clio_5door_2010/Renault_Clio_5door_2010.obj";
 const hondaPcxGlbPath = "/models/honda-pcx-2/source/PCXDLXABS.glb";
+const hondaPcxPaintMaterialNames = new Set(["Body", "PCX AZUL-Lateral"]);
 
 type VehicleVariant = "box" | "renault-clio" | "honda-pcx";
 
@@ -116,10 +117,11 @@ function RenaultClioMesh({
 
 function HondaPcxMesh({
   position,
+  color,
   size,
   yaw = 0,
-}: Omit<VehicleMeshProps, "color" | "variant">) {
-  const groundClearanceOffsetMeters = 0.08;
+}: Omit<VehicleMeshProps, "variant">) {
+  const groundClearanceOffsetMeters = 0.015;
   const modelWidthMeters = 0.74;
   const modelHeightMeters = 1.105;
   const gltf = useLoader(GLTFLoader, hondaPcxGlbPath);
@@ -136,8 +138,59 @@ function HondaPcxMesh({
     object.traverse((child) => {
       child.castShadow = true;
       child.receiveShadow = true;
+
+      const mesh = child as Mesh;
+      if (!("isMesh" in mesh) || !mesh.isMesh) {
+        return;
+      }
+
+      if (Array.isArray(mesh.material)) {
+        mesh.material = mesh.material.map((material) => {
+          if (!material) {
+            return material;
+          }
+
+          const nextMaterial = material.clone() as Material & {
+            name?: string;
+            color?: { set: (value: string) => void };
+          };
+
+          if (
+            nextMaterial.name &&
+            hondaPcxPaintMaterialNames.has(nextMaterial.name) &&
+            nextMaterial.color
+          ) {
+            nextMaterial.color.set(color);
+          }
+
+          nextMaterial.needsUpdate = true;
+          return nextMaterial;
+        });
+
+        return;
+      }
+
+      if (!mesh.material) {
+        return;
+      }
+
+      const nextMaterial = mesh.material.clone() as Material & {
+        name?: string;
+        color?: { set: (value: string) => void };
+      };
+
+      if (
+        nextMaterial.name &&
+        hondaPcxPaintMaterialNames.has(nextMaterial.name) &&
+        nextMaterial.color
+      ) {
+        nextMaterial.color.set(color);
+      }
+
+      nextMaterial.needsUpdate = true;
+      mesh.material = nextMaterial;
     });
-  }, [object]);
+  }, [color, object]);
 
   return (
     <group position={groundedPosition} rotation={[0, Math.PI / 2 + yaw, 0]}>
@@ -166,7 +219,7 @@ export default function VehicleMesh({
   if (variant === "honda-pcx") {
     return (
       <Suspense fallback={null}>
-        <HondaPcxMesh position={position} size={size} yaw={yaw} />
+        <HondaPcxMesh position={position} color={color} size={size} yaw={yaw} />
       </Suspense>
     );
   }

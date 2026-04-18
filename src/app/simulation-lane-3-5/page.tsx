@@ -15,7 +15,7 @@ export default function SimulationLaneThreeFivePage() {
       subtitle="Motorcycle overtake with a 3.5 m lane width"
       roadLayout={roadLayout}
       initialLane="left"
-      carSteeringAngleDeg={5}
+      carSteeringAngleDeg={7}
       carSteeringDelaySeconds={2}
       initialCarZ={roadLayout.leftLaneCenter - roadLayout.laneWidth / 2 + 2.5}
       initialBikeZ={roadLayout.leftLaneCenter - roadLayout.laneWidth / 4}

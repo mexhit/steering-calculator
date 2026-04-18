@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  advanceSnapshot,
-  createInitialSnapshot,
+  getSnapshotAtTime,
+  MAX_SIMULATION_TIME_SECONDS,
 } from "@/simulation/engine/physics";
 import {
   SimulationConfig,
@@ -15,24 +15,40 @@ type UseSimulationResult = {
   running: boolean;
   setRunning: (running: boolean) => void;
   reset: () => void;
+  seekTo: (timeSeconds: number) => void;
+  duration: number;
 };
 
-const MAX_SIMULATION_TIME_SECONDS = 5;
-
-export const useSimulation = (config: SimulationConfig): UseSimulationResult => {
+export const useSimulation = (
+  config: SimulationConfig,
+  playbackRate: number,
+): UseSimulationResult => {
   const configRef = useRef(config);
+  const playbackRateRef = useRef(playbackRate);
   const shouldStopRef = useRef(false);
-  const [snapshot, setSnapshot] = useState(() => createInitialSnapshot(config));
+  const [snapshot, setSnapshot] = useState(() => getSnapshotAtTime(config, 0));
   const [running, setRunning] = useState(true);
 
   useEffect(() => {
     configRef.current = config;
   }, [config]);
 
+  useEffect(() => {
+    playbackRateRef.current = playbackRate;
+  }, [playbackRate]);
+
   const reset = useCallback(() => {
-    setSnapshot(createInitialSnapshot(configRef.current));
+    setSnapshot(getSnapshotAtTime(configRef.current, 0));
     setRunning(true);
   }, []);
+
+  const seekTo = useCallback((timeSeconds: number) => {
+    setSnapshot(getSnapshotAtTime(configRef.current, timeSeconds));
+  }, []);
+
+  useEffect(() => {
+    setSnapshot((current) => getSnapshotAtTime(configRef.current, current.time));
+  }, [config]);
 
   useEffect(() => {
     if (!running) {
@@ -43,14 +59,14 @@ export const useSimulation = (config: SimulationConfig): UseSimulationResult => 
     let lastTime = performance.now();
 
     const frame = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      const dt = Math.min((now - lastTime) / 1000, 0.05) * playbackRateRef.current;
       lastTime = now;
 
       setSnapshot((current) => {
-        const next = advanceSnapshot(current, dt, configRef.current);
+        const next = getSnapshotAtTime(configRef.current, current.time + dt);
         if (next.time >= MAX_SIMULATION_TIME_SECONDS) {
           shouldStopRef.current = true;
-          return { ...next, time: MAX_SIMULATION_TIME_SECONDS };
+          return next;
         }
         return next;
       });
@@ -69,5 +85,12 @@ export const useSimulation = (config: SimulationConfig): UseSimulationResult => 
     return () => cancelAnimationFrame(frameId);
   }, [running]);
 
-  return { snapshot, running, setRunning, reset };
+  return {
+    snapshot,
+    running,
+    setRunning,
+    reset,
+    seekTo,
+    duration: MAX_SIMULATION_TIME_SECONDS,
+  };
 };

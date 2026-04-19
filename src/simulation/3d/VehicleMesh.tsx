@@ -2,13 +2,8 @@ import { Suspense, useEffect } from "react";
 import { useLoader } from "@react-three/fiber";
 import type { Group, Material, Mesh } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
-const renaultClioMtlPath =
-  "/models/Renault_Clio_5door_2010/Renault_Clio_5door_2010.mtl";
-const renaultClioObjPath =
-  "/models/Renault_Clio_5door_2010/Renault_Clio_5door_2010.obj";
+const renaultClioGlbPath = "/models/renault_clio_5door_2010.glb";
 const hondaPcxGlbPath = "/models/honda-pcx-2/source/PCXDLXABS.glb";
 const hondaPcxPaintMaterialNames = new Set(["Body", "PCX AZUL-Lateral"]);
 
@@ -52,11 +47,8 @@ function RenaultClioMesh({
   const modelWidthUnits = 205.87;
   const modelHeightUnits = 170.36;
   const modelHalfHeightUnits = modelHeightUnits / 2;
-  const materials = useLoader(MTLLoader, renaultClioMtlPath);
-  materials.preload();
-  const object = useLoader(OBJLoader, renaultClioObjPath, (loader) => {
-    loader.setMaterials(materials);
-  }) as Group;
+  const gltf = useLoader(GLTFLoader, renaultClioGlbPath);
+  const object = gltf.scene as Group;
 
   const uniformScale = size[0] / modelWidthUnits;
   const renderedHeight = modelHeightUnits * uniformScale;
@@ -229,10 +221,5 @@ export default function VehicleMesh({
   );
 }
 
-useLoader.preload(MTLLoader, renaultClioMtlPath);
-useLoader.preload(OBJLoader, renaultClioObjPath, async (loader) => {
-  const preloadMaterials = await new MTLLoader().loadAsync(renaultClioMtlPath);
-  preloadMaterials.preload();
-  loader.setMaterials(preloadMaterials);
-});
+useLoader.preload(GLTFLoader, renaultClioGlbPath);
 useLoader.preload(GLTFLoader, hondaPcxGlbPath);

@@ -8,6 +8,9 @@ import Road from "@/simulation/3d/Road";
 import VehicleMesh from "@/simulation/3d/VehicleMesh";
 import { RoadLayout, SimulationSnapshot } from "@/simulation/engine/types";
 
+const motorcycleRenderLeftOffset = -0.16;
+const vehicleRenderLeftOffset = -0.4;
+
 export type CameraMode = "orbit" | "chase-bike" | "follow-car" | "top";
 
 type CameraRigProps = {
@@ -86,14 +89,22 @@ export default function SimulationScene({
       <Road layout={roadLayout} />
 
       <VehicleMesh
-        position={[snapshot.car.x, snapshot.car.y + 0.55, snapshot.car.z - 0.28]}
+        position={[
+          snapshot.car.x,
+          snapshot.car.y + 0.55,
+          snapshot.car.z + vehicleRenderLeftOffset,
+        ]}
         size={[snapshot.car.width, 1.1, snapshot.car.length]}
         color="#3b82f6"
         yaw={-snapshot.car.heading}
         variant="renault-clio"
       />
       <VehicleMesh
-        position={[snapshot.bike.x, snapshot.bike.y + 0.76, snapshot.bike.z]}
+        position={[
+          snapshot.bike.x,
+          snapshot.bike.y + 0.76,
+          snapshot.bike.z + motorcycleRenderLeftOffset,
+        ]}
         size={[snapshot.bike.width, 0.8, snapshot.bike.length]}
         color="#f1f3f5"
         yaw={-snapshot.bike.heading}

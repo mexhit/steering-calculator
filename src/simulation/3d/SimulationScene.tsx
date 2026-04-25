@@ -8,8 +8,8 @@ import Road from "@/simulation/3d/Road";
 import VehicleMesh from "@/simulation/3d/VehicleMesh";
 import { RoadLayout, SimulationSnapshot } from "@/simulation/engine/types";
 
-const motorcycleRenderLeftOffset = -0.16;
-const vehicleRenderLeftOffset = -0.4;
+const motorcycleRenderLeftOffset = -0.17;
+const vehicleRenderLeftOffset = -0.5;
 
 export type CameraMode = "orbit" | "chase-bike" | "follow-car" | "top";
 

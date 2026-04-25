@@ -21,6 +21,12 @@ interface PlanterBoxProps {
   length?: number;
 }
 
+interface RoundaboutProps {
+  position: Vec3;
+  outerRadius?: number;
+  innerRadius?: number;
+}
+
 interface TreeProps {
   position: Vec3;
   trunkColor?: string;
@@ -126,6 +132,47 @@ function PlanterBox({ position, length = 1.2 }: PlanterBoxProps) {
   );
 }
 
+function Roundabout({
+  position,
+  outerRadius = 4.8,
+  innerRadius = 2.5,
+}: RoundaboutProps) {
+  const shrubOffsets = useMemo<Vec3[]>(
+    () => [
+      [0, 0.1, 0],
+      [0.85, 0.08, 0.55],
+      [-0.8, 0.08, -0.45],
+      [0.2, 0.08, -0.9],
+    ],
+    [],
+  );
+
+  return (
+    <group position={position}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.016, 0]}>
+        <ringGeometry args={[innerRadius, outerRadius, 40]} />
+        <meshStandardMaterial color="#4b5563" roughness={0.96} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, 0]}>
+        <ringGeometry args={[innerRadius - 0.14, innerRadius + 0.14, 40]} />
+        <meshStandardMaterial color="#f3f4f6" roughness={0.8} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.055, 0]}>
+        <circleGeometry args={[innerRadius - 0.18, 40]} />
+        <meshStandardMaterial color="#2d5e35" roughness={1} />
+      </mesh>
+      {shrubOffsets.map((offset, index) => (
+        <Bush
+          key={`roundabout-bush-${index}`}
+          position={offset}
+          scale={0.95}
+          color={index % 2 === 0 ? "#3c7a46" : "#4a8c4a"}
+        />
+      ))}
+    </group>
+  );
+}
+
 function Tree({
   position,
   trunkColor = "#6b4226",
@@ -197,7 +244,7 @@ function SolidLine({
 
 // Road layout:
 //  Total width: ~20 units
-//  Median island: 3.6 units wide (centre)
+//  Median island: 6.0 units wide (centre)
 //  Bike lanes: 1.2 units each side (adjacent to median)
 //  Traffic lanes: 2 lanes each side, divided by dashed line
 //  Sidewalks: outer edges
@@ -208,8 +255,23 @@ type RoadProps = {
 
 export default function Road({ layout }: RoadProps) {
   const roadLength = 320;
+  const roadStartX = -roadLength / 2;
+  const roadEndX = roadLength / 2;
   const medianHalf = layout.medianWidth / 2;
   const sidewalkCenterZ = layout.outerEdgeZ + layout.sidewalkWidth / 2;
+  const connectorLength = 20;
+  const initialCarFrontX = 2.25;
+  const connectorStartX = initialCarFrontX;
+  const connectorEndX = connectorStartX + connectorLength;
+  const connectorCenterX = connectorStartX + connectorLength / 2;
+  const connectorClearance = 4;
+  const medianCurbDepth = 0.1;
+  const roundaboutOuterRadius = layout.medianWidth / 2;
+  const roundaboutInnerRadius = Math.max(roundaboutOuterRadius - 1.5, 2.2);
+  const leftMedianLength = connectorStartX - roadStartX;
+  const rightMedianLength = roadEndX - connectorEndX;
+  const leftMedianCenterX = roadStartX + leftMedianLength / 2;
+  const rightMedianCenterX = connectorEndX + rightMedianLength / 2;
 
   const archPositions = useMemo<number[]>(() => {
     const positions: number[] = [];
@@ -243,16 +305,48 @@ export default function Road({ layout }: RoadProps) {
       </mesh>
 
       {/* ── MEDIAN BASE ── */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <planeGeometry args={[roadLength, layout.medianWidth]} />
-        <meshStandardMaterial color="#1e2128" roughness={0.9} />
-      </mesh>
+      {(
+        [
+          { key: "west", centerX: leftMedianCenterX, length: leftMedianLength },
+          {
+            key: "east",
+            centerX: rightMedianCenterX,
+            length: rightMedianLength,
+          },
+        ] as const
+      ).map(({ key, centerX, length }) => (
+        <mesh
+          key={`median-base-${key}`}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[centerX, 0.02, 0]}
+        >
+          <planeGeometry args={[length, layout.medianWidth]} />
+          <meshStandardMaterial color="#1e2128" roughness={0.9} />
+        </mesh>
+      ))}
 
       {/* ── MEDIAN GREEN STRIP ── */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]}>
-        <planeGeometry args={[roadLength, Math.max(layout.medianWidth - 0.4, 1.2)]} />
-        <meshStandardMaterial color="#2d5e35" roughness={1} />
-      </mesh>
+      {(
+        [
+          { key: "west", centerX: leftMedianCenterX, length: leftMedianLength },
+          {
+            key: "east",
+            centerX: rightMedianCenterX,
+            length: rightMedianLength,
+          },
+        ] as const
+      ).map(({ key, centerX, length }) => (
+        <mesh
+          key={`median-green-${key}`}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[centerX, 0.04, 0]}
+        >
+          <planeGeometry
+            args={[length, Math.max(layout.medianWidth - 0.4, 1.2)]}
+          />
+          <meshStandardMaterial color="#2d5e35" roughness={1} />
+        </mesh>
+      ))}
 
       {/* ── SIDEWALKS ── */}
       {([-sidewalkCenterZ, sidewalkCenterZ] as number[]).map((z) => (
@@ -261,6 +355,20 @@ export default function Road({ layout }: RoadProps) {
           <meshStandardMaterial color="#888c94" roughness={0.9} />
         </mesh>
       ))}
+
+      {/* ── CONNECTOR OPENING ── */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[connectorCenterX, 0.015, 0]}
+      >
+        <planeGeometry args={[connectorLength, layout.totalRoadWidth]} />
+        <meshStandardMaterial color="#2a2e38" roughness={0.95} />
+      </mesh>
+      <Roundabout
+        position={[connectorCenterX, 0, 0]}
+        outerRadius={roundaboutOuterRadius}
+        innerRadius={roundaboutInnerRadius}
+      />
 
       {/* ── LANE MARKINGS ── */}
 
@@ -286,22 +394,57 @@ export default function Road({ layout }: RoadProps) {
 
       {/* ── MEDIAN CURB EDGES ── */}
       {([-medianHalf, medianHalf] as number[]).map((z) => (
-        <mesh key={z} position={[0, 0.06, z]}>
-          <boxGeometry args={[roadLength, 0.12, 0.1]} />
-          <meshStandardMaterial color="#c8c0a0" roughness={0.8} />
-        </mesh>
+        <group key={`median-curb-${z}`}>
+          <mesh
+            position={[
+              leftMedianCenterX,
+              0.06,
+              z - Math.sign(z) * (medianCurbDepth / 2),
+            ]}
+          >
+            <boxGeometry args={[leftMedianLength, 0.12, medianCurbDepth]} />
+            <meshStandardMaterial color="#c8c0a0" roughness={0.8} />
+          </mesh>
+          <mesh
+            position={[
+              rightMedianCenterX,
+              0.06,
+              z - Math.sign(z) * (medianCurbDepth / 2),
+            ]}
+          >
+            <boxGeometry args={[rightMedianLength, 0.12, medianCurbDepth]} />
+            <meshStandardMaterial color="#c8c0a0" roughness={0.8} />
+          </mesh>
+        </group>
       ))}
 
       {/* ── MEDIAN ARCH STRUCTURES ── */}
-      {archPositions.map((x) => (
-        <ArchStructure key={`arch-n-${x}`} position={[x, 0.04, -0.5]} />
-      ))}
-      {archPositions.map((x) => (
-        <ArchStructure key={`arch-s-${x}`} position={[x, 0.04, 0.5]} />
-      ))}
+      {archPositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
+        .map((x) => (
+          <ArchStructure key={`arch-n-${x}`} position={[x, 0.04, -0.5]} />
+        ))}
+      {archPositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
+        .map((x) => (
+          <ArchStructure key={`arch-s-${x}`} position={[x, 0.04, 0.5]} />
+        ))}
 
       {/* ── MEDIAN TREES ── */}
       {treePositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
         .filter((_, i) => i % 3 === 0)
         .map((x) => (
           <Tree
@@ -314,6 +457,11 @@ export default function Road({ layout }: RoadProps) {
 
       {/* ── MEDIAN SHRUBS ── */}
       {treePositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
         .filter((_, i) => i % 3 !== 0)
         .map((x) => (
           <Bush
@@ -325,20 +473,32 @@ export default function Road({ layout }: RoadProps) {
         ))}
 
       {/* ── PLANTER BOXES ── */}
-      {planterPositions.map((x) => (
-        <PlanterBox
-          key={`planter-n-${x}`}
-          position={[x, 0.02, -(medianHalf - 0.5)]}
-          length={3.5}
-        />
-      ))}
-      {planterPositions.map((x) => (
-        <PlanterBox
-          key={`planter-s-${x}`}
-          position={[x, 0.02, medianHalf - 0.5]}
-          length={3.5}
-        />
-      ))}
+      {planterPositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
+        .map((x) => (
+          <PlanterBox
+            key={`planter-n-${x}`}
+            position={[x, 0.02, -(medianHalf - 0.5)]}
+            length={3.5}
+          />
+        ))}
+      {planterPositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
+        .map((x) => (
+          <PlanterBox
+            key={`planter-s-${x}`}
+            position={[x, 0.02, medianHalf - 0.5]}
+            length={3.5}
+          />
+        ))}
 
       {/* ── SIDEWALK TREES ── */}
       {sidewalkTreeXPositions.map((x) => (

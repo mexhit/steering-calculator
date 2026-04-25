@@ -18,18 +18,18 @@ const getLaneCenter = (roadLayout: RoadLayout, lane: LaneSide) =>
 
 export const legacyRoadLayout: RoadLayout = {
   laneWidth: 2.05,
-  medianWidth: 3.6,
+  medianWidth: 6,
   sidewalkWidth: 1.6,
-  totalRoadWidth: 20,
-  laneDividerZ: 4.625,
-  outerEdgeZ: 7.4,
-  rightLaneCenter: 4.35,
-  leftLaneCenter: 2.3,
+  totalRoadWidth: 17.4,
+  laneDividerZ: 5.05,
+  outerEdgeZ: 7.1,
+  rightLaneCenter: 6.075,
+  leftLaneCenter: 4.025,
 };
 
 export const buildTwoLaneRoadLayout = (
   laneWidth: number,
-  medianWidth = 3.6,
+  medianWidth = 6,
   sidewalkWidth = 1.6,
 ): RoadLayout => {
   const laneDividerZ = medianWidth / 2 + laneWidth;

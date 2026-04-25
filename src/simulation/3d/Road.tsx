@@ -122,18 +122,26 @@ function ArchStructure({ position }: ArchStructureProps) {
 }
 
 const PLANTER_BOX_LENGTH = 1.2;
-const PLANTER_BOX_WIDTH = 0.5;
+const PLANTER_BOX_WIDTH = 1.2;
 const PLANTER_BOX_HEIGHT = 0.5;
 const PLANTER_SOIL_INSET = 0.05;
-const PLANTER_BUSH_SCALE = 1.2;
+const BUSH_TARGET_HEIGHT = 1.2;
+const PLANTER_BUSH_TARGET_HEIGHT = 0.8;
+const BUSH_BASE_HEIGHT = 0.33;
+const BUSH_SCALE_FOR_TARGET_HEIGHT = BUSH_TARGET_HEIGHT / BUSH_BASE_HEIGHT;
+const PLANTER_BUSH_SCALE = PLANTER_BUSH_TARGET_HEIGHT / BUSH_BASE_HEIGHT;
 const PLANTER_GROUP_SIZE = 3;
 const PLANTER_GROUP_GAP = 7;
 const GAP_HEDGE_LENGTH = 6.4;
-const GAP_HEDGE_HEIGHT = 1.4;
-const GAP_HEDGE_DEPTH = 0.42;
+const GAP_HEDGE_HEIGHT = 1.2;
+const GAP_HEDGE_DEPTH = 1.2;
+const PLANTER_INSET_FROM_CURB = 0.1;
 
 function PlanterBox({ position }: PlanterBoxProps) {
-  const bushOffsets = [-0.3, 0.3];
+  const bushOffsets: Array<[number, number]> = [
+    [-0.26, -0.24],
+    [0.26, 0.24],
+  ];
 
   return (
     <group position={position}>
@@ -158,10 +166,10 @@ function PlanterBox({ position }: PlanterBoxProps) {
         <meshStandardMaterial color="#4a3520" roughness={1} />
       </mesh>
       {/* Compact hedge sized to roughly 40 cm tall */}
-      {bushOffsets.map((x, i) => (
+      {bushOffsets.map(([x, z], i) => (
         <Bush
           key={i}
-          position={[x, PLANTER_BOX_HEIGHT + 0.01, i % 2 === 0 ? -0.04 : 0.04]}
+          position={[x, PLANTER_BOX_HEIGHT + 0.01, z]}
           scale={PLANTER_BUSH_SCALE}
           color={i % 2 === 0 ? "#4f9a5e" : "#3f854f"}
         />
@@ -236,7 +244,7 @@ function Roundabout({
         <Bush
           key={`roundabout-bush-${index}`}
           position={offset}
-          scale={0.95}
+          scale={BUSH_SCALE_FOR_TARGET_HEIGHT}
           color={index % 2 === 0 ? "#3c7a46" : "#4a8c4a"}
         />
       ))}
@@ -337,6 +345,9 @@ export default function Road({ layout }: RoadProps) {
   const connectorCenterX = connectorStartX + connectorLength / 2;
   const connectorClearance = 4;
   const medianCurbDepth = 0.1;
+  const planterCenterZ =
+    medianHalf - PLANTER_BOX_WIDTH / 2 - PLANTER_INSET_FROM_CURB;
+  const hedgeCenterZ = planterCenterZ;
   const roundaboutOuterRadius = layout.medianWidth / 2;
   const roundaboutInnerRadius = Math.max(roundaboutOuterRadius - 1.5, 2.2);
   const leftMedianLength = connectorStartX - roadStartX;
@@ -568,7 +579,7 @@ export default function Road({ layout }: RoadProps) {
           <Bush
             key={`bush-${x}`}
             position={[x, 0.04, x % 2 === 0 ? 0.5 : -0.5]}
-            scale={1.1}
+            scale={BUSH_SCALE_FOR_TARGET_HEIGHT}
             color={x % 4 === 0 ? "#3a7d44" : "#4a8c4a"}
           />
         ))}
@@ -583,7 +594,7 @@ export default function Road({ layout }: RoadProps) {
         .map((x) => (
           <PlanterBox
             key={`planter-n-${x}`}
-            position={[x, 0.02, -(medianHalf - 0.5)]}
+            position={[x, 0.02, -planterCenterZ]}
           />
         ))}
       {planterPositions
@@ -595,7 +606,7 @@ export default function Road({ layout }: RoadProps) {
         .map((x) => (
           <PlanterBox
             key={`planter-s-${x}`}
-            position={[x, 0.02, medianHalf - 0.5]}
+            position={[x, 0.02, planterCenterZ]}
           />
         ))}
 
@@ -609,7 +620,7 @@ export default function Road({ layout }: RoadProps) {
         .map((x) => (
           <Hedge
             key={`gap-hedge-n-${x}`}
-            position={[x, 0.02, -(medianHalf - 0.5)]}
+            position={[x, 0.02, -hedgeCenterZ]}
           />
         ))}
       {gapHedgePositions
@@ -621,7 +632,7 @@ export default function Road({ layout }: RoadProps) {
         .map((x) => (
           <Hedge
             key={`gap-hedge-s-${x}`}
-            position={[x, 0.02, medianHalf - 0.5]}
+            position={[x, 0.02, hedgeCenterZ]}
           />
         ))}
 

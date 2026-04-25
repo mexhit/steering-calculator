@@ -336,6 +336,7 @@ export default function Road({ layout }: RoadProps) {
   const roadLength = 320;
   const roadStartX = -roadLength / 2;
   const roadEndX = roadLength / 2;
+  const dashedLineInset = 0.8;
   const medianHalf = layout.medianWidth / 2;
   const sidewalkCenterZ = layout.outerEdgeZ + layout.sidewalkWidth / 2;
   const connectorLength = 20;
@@ -486,14 +487,14 @@ export default function Road({ layout }: RoadProps) {
 
       {/* Dashed white: lane divider at center of each carriageway */}
       <DashedLine
-        z={-layout.laneDividerZ}
+        z={-(layout.laneDividerZ - dashedLineInset)}
         dashLength={2.5}
         gap={2}
         count={55}
         y={0.02}
       />
       <DashedLine
-        z={layout.laneDividerZ}
+        z={layout.laneDividerZ - dashedLineInset}
         dashLength={2.5}
         gap={2}
         count={55}
@@ -618,10 +619,7 @@ export default function Road({ layout }: RoadProps) {
             x > connectorEndX + connectorClearance,
         )
         .map((x) => (
-          <Hedge
-            key={`gap-hedge-n-${x}`}
-            position={[x, 0.02, -hedgeCenterZ]}
-          />
+          <Hedge key={`gap-hedge-n-${x}`} position={[x, 0.02, -hedgeCenterZ]} />
         ))}
       {gapHedgePositions
         .filter(
@@ -630,10 +628,7 @@ export default function Road({ layout }: RoadProps) {
             x > connectorEndX + connectorClearance,
         )
         .map((x) => (
-          <Hedge
-            key={`gap-hedge-s-${x}`}
-            position={[x, 0.02, hedgeCenterZ]}
-          />
+          <Hedge key={`gap-hedge-s-${x}`} position={[x, 0.02, hedgeCenterZ]} />
         ))}
 
       {/* ── SIDEWALK TREES ── */}

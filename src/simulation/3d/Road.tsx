@@ -18,7 +18,20 @@ interface ArchStructureProps {
 
 interface PlanterBoxProps {
   position: Vec3;
+}
+
+interface HedgeProps {
+  position: Vec3;
   length?: number;
+  height?: number;
+}
+
+interface HedgeBushProps {
+  position: Vec3;
+  length?: number;
+  height?: number;
+  depth?: number;
+  color?: string;
 }
 
 interface RoundaboutProps {
@@ -108,26 +121,84 @@ function ArchStructure({ position }: ArchStructureProps) {
   );
 }
 
-function PlanterBox({ position, length = 1.2 }: PlanterBoxProps) {
+const PLANTER_BOX_LENGTH = 1.2;
+const PLANTER_BOX_WIDTH = 0.5;
+const PLANTER_BOX_HEIGHT = 0.5;
+const PLANTER_SOIL_INSET = 0.05;
+const PLANTER_BUSH_SCALE = 1.2;
+const PLANTER_GROUP_SIZE = 3;
+const PLANTER_GROUP_GAP = 7;
+const GAP_HEDGE_LENGTH = 6.4;
+const GAP_HEDGE_HEIGHT = 1.4;
+const GAP_HEDGE_DEPTH = 0.42;
+
+function PlanterBox({ position }: PlanterBoxProps) {
+  const bushOffsets = [-0.3, 0.3];
+
   return (
     <group position={position}>
       {/* Box */}
-      <mesh position={[0, 0.08, 0]}>
-        <boxGeometry args={[length, 0.16, 0.5]} />
+      <mesh position={[0, PLANTER_BOX_HEIGHT / 2, 0]}>
+        <boxGeometry
+          args={[PLANTER_BOX_LENGTH, PLANTER_BOX_HEIGHT, PLANTER_BOX_WIDTH]}
+        />
         <meshStandardMaterial color="#8B6914" roughness={0.8} />
       </mesh>
       {/* Soil */}
-      <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[length - 0.05, 0.45]} />
+      <mesh
+        position={[0, PLANTER_BOX_HEIGHT + 0.001, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+      >
+        <planeGeometry
+          args={[
+            PLANTER_BOX_LENGTH - PLANTER_SOIL_INSET,
+            PLANTER_BOX_WIDTH - PLANTER_SOIL_INSET,
+          ]}
+        />
         <meshStandardMaterial color="#4a3520" roughness={1} />
       </mesh>
-      {/* Small plants in box */}
-      {([-0.3, 0, 0.3] as number[]).slice(0, Math.ceil(length)).map((x, i) => (
-        <mesh key={i} position={[x * (length / 1.2), 0.25, 0]}>
-          <sphereGeometry args={[0.1, 6, 5]} />
-          <meshStandardMaterial color="#5aaa66" roughness={0.9} />
-        </mesh>
+      {/* Compact hedge sized to roughly 40 cm tall */}
+      {bushOffsets.map((x, i) => (
+        <Bush
+          key={i}
+          position={[x, PLANTER_BOX_HEIGHT + 0.01, i % 2 === 0 ? -0.04 : 0.04]}
+          scale={PLANTER_BUSH_SCALE}
+          color={i % 2 === 0 ? "#4f9a5e" : "#3f854f"}
+        />
       ))}
+    </group>
+  );
+}
+
+function HedgeBush({
+  position,
+  length = GAP_HEDGE_LENGTH,
+  height = GAP_HEDGE_HEIGHT,
+  depth = GAP_HEDGE_DEPTH,
+  color = "#4b935b",
+}: HedgeBushProps) {
+  return (
+    <group position={position}>
+      <mesh position={[0, height / 2, 0]}>
+        <boxGeometry args={[length, height, depth]} />
+        <meshStandardMaterial color={color} roughness={0.95} />
+      </mesh>
+      <mesh position={[0, height * 0.9, 0]}>
+        <boxGeometry args={[length * 0.92, height * 0.22, depth * 0.88]} />
+        <meshStandardMaterial color="#5aa06a" roughness={0.92} />
+      </mesh>
+    </group>
+  );
+}
+
+function Hedge({
+  position,
+  length = GAP_HEDGE_LENGTH,
+  height = GAP_HEDGE_HEIGHT,
+}: HedgeProps) {
+  return (
+    <group position={position}>
+      <HedgeBush position={[0, 0, 0]} length={length} height={height} />
     </group>
   );
 }
@@ -287,7 +358,37 @@ export default function Road({ layout }: RoadProps) {
 
   const planterPositions = useMemo<number[]>(() => {
     const positions: number[] = [];
-    for (let x = -148; x <= 148; x += 5) positions.push(x);
+    const planterCenterSpacing = PLANTER_BOX_LENGTH;
+    const groupSpan = (PLANTER_GROUP_SIZE - 1) * planterCenterSpacing;
+    const groupStride =
+      PLANTER_GROUP_SIZE * PLANTER_BOX_LENGTH + PLANTER_GROUP_GAP;
+
+    for (
+      let groupCenterX = -146;
+      groupCenterX <= 146;
+      groupCenterX += groupStride
+    ) {
+      for (let i = 0; i < PLANTER_GROUP_SIZE; i++) {
+        positions.push(groupCenterX - groupSpan / 2 + i * planterCenterSpacing);
+      }
+    }
+
+    return positions;
+  }, []);
+
+  const gapHedgePositions = useMemo<number[]>(() => {
+    const positions: number[] = [];
+    const groupStride =
+      PLANTER_GROUP_SIZE * PLANTER_BOX_LENGTH + PLANTER_GROUP_GAP;
+
+    for (
+      let groupCenterX = -146;
+      groupCenterX + groupStride <= 146;
+      groupCenterX += groupStride
+    ) {
+      positions.push(groupCenterX + groupStride / 2);
+    }
+
     return positions;
   }, []);
 
@@ -483,7 +584,6 @@ export default function Road({ layout }: RoadProps) {
           <PlanterBox
             key={`planter-n-${x}`}
             position={[x, 0.02, -(medianHalf - 0.5)]}
-            length={3.5}
           />
         ))}
       {planterPositions
@@ -496,7 +596,32 @@ export default function Road({ layout }: RoadProps) {
           <PlanterBox
             key={`planter-s-${x}`}
             position={[x, 0.02, medianHalf - 0.5]}
-            length={3.5}
+          />
+        ))}
+
+      {/* ── GAP HEDGES ── */}
+      {gapHedgePositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
+        .map((x) => (
+          <Hedge
+            key={`gap-hedge-n-${x}`}
+            position={[x, 0.02, -(medianHalf - 0.5)]}
+          />
+        ))}
+      {gapHedgePositions
+        .filter(
+          (x) =>
+            x < connectorStartX - connectorClearance ||
+            x > connectorEndX + connectorClearance,
+        )
+        .map((x) => (
+          <Hedge
+            key={`gap-hedge-s-${x}`}
+            position={[x, 0.02, medianHalf - 0.5]}
           />
         ))}
 

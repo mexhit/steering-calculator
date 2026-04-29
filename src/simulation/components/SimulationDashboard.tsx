@@ -171,7 +171,7 @@ export default function SimulationDashboard({
         fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
       }}
     >
-      <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 14 }}>
+      <div style={{ maxWidth: 1480, margin: "0 auto", display: "grid", gap: 14 }}>
         <div
           style={{
             ...panelStyle,
@@ -275,7 +275,7 @@ export default function SimulationDashboard({
           <div
             style={{
               ...panelStyle,
-              height: 530,
+              height: "clamp(620px, 72vh, 860px)",
               padding: 0,
               overflow: "hidden",
               position: "relative",

@@ -1,11 +1,25 @@
 import { Suspense, useEffect } from "react";
 import { useLoader } from "@react-three/fiber";
 import type { Group, Material, Mesh } from "three";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const renaultClioGlbPath = "/models/renault_clio_5door_2010.glb";
-const hondaPcxGlbPath = "/models/honda-pcx-2/source/PCXDLXABS.glb";
+const hondaAdvFbxPath = "/models/honda_adv_350_2025.fbx";
 const hondaPcxPaintMaterialNames = new Set(["Body", "PCX AZUL-Lateral"]);
+const hondaAdvBodyMeshNames = new Set([
+  "cuerpo_principal",
+  "cuerpo_principal_palstico_brillante",
+  "cuerpo_principal_plastico",
+  "guardafango_delantero",
+  "guardafango_delantero_gloss",
+  "cubre_manetas",
+  "pantalla",
+  "soporte_cupula",
+  "marco_luz_delantera",
+  "marco_reflector_delantero",
+]);
+const hondaAdvGreyColor = "#8a8f98";
 
 type VehicleVariant = "box" | "renault-clio" | "honda-pcx";
 
@@ -43,7 +57,7 @@ function RenaultClioMesh({
   size,
   yaw = 0,
 }: Omit<VehicleMeshProps, "color" | "variant">) {
-  const groundClearanceOffsetMeters = 0.25;
+  const groundClearanceOffsetMeters = 0.29;
   const modelWidthUnits = 205.87;
   const modelHeightUnits = 170.36;
   const modelHalfHeightUnits = modelHeightUnits / 2;
@@ -113,13 +127,12 @@ function HondaPcxMesh({
   size,
   yaw = 0,
 }: Omit<VehicleMeshProps, "variant">) {
-  const groundClearanceOffsetMeters = 0.015;
-  const modelWidthMeters = 0.74;
-  const modelHeightMeters = 1.105;
-  const gltf = useLoader(GLTFLoader, hondaPcxGlbPath);
-  const object = gltf.scene;
-  const uniformScale = size[0] / modelWidthMeters;
-  const renderedHeight = modelHeightMeters * uniformScale;
+  const groundClearanceOffsetMeters = -0.08;
+  const modelWidthUnits = 89.4;
+  const modelHeightUnits = 132.63;
+  const object = useLoader(FBXLoader, hondaAdvFbxPath) as Group;
+  const uniformScale = size[0] / modelWidthUnits;
+  const renderedHeight = modelHeightUnits * uniformScale;
   const groundedPosition: [number, number, number] = [
     position[0],
     position[1] - renderedHeight / 2 + groundClearanceOffsetMeters,
@@ -136,6 +149,8 @@ function HondaPcxMesh({
         return;
       }
 
+      const shouldTintHondaAdvMesh = hondaAdvBodyMeshNames.has(mesh.name);
+
       if (Array.isArray(mesh.material)) {
         mesh.material = mesh.material.map((material) => {
           if (!material) {
@@ -148,11 +163,12 @@ function HondaPcxMesh({
           };
 
           if (
-            nextMaterial.name &&
-            hondaPcxPaintMaterialNames.has(nextMaterial.name) &&
+            ((nextMaterial.name &&
+              hondaPcxPaintMaterialNames.has(nextMaterial.name)) ||
+              shouldTintHondaAdvMesh) &&
             nextMaterial.color
           ) {
-            nextMaterial.color.set(color);
+            nextMaterial.color.set(hondaAdvGreyColor);
           }
 
           nextMaterial.needsUpdate = true;
@@ -172,11 +188,12 @@ function HondaPcxMesh({
       };
 
       if (
-        nextMaterial.name &&
-        hondaPcxPaintMaterialNames.has(nextMaterial.name) &&
+        ((nextMaterial.name &&
+          hondaPcxPaintMaterialNames.has(nextMaterial.name)) ||
+          shouldTintHondaAdvMesh) &&
         nextMaterial.color
       ) {
-        nextMaterial.color.set(color);
+        nextMaterial.color.set(hondaAdvGreyColor);
       }
 
       nextMaterial.needsUpdate = true;
@@ -186,7 +203,7 @@ function HondaPcxMesh({
 
   return (
     <group position={groundedPosition} rotation={[0, Math.PI / 2 + yaw, 0]}>
-      <group rotation={[0, -Math.PI / 2, 0]} scale={uniformScale}>
+      <group rotation={[0, 0, 0]} scale={uniformScale}>
         <primitive object={object} />
       </group>
     </group>
@@ -222,4 +239,4 @@ export default function VehicleMesh({
 }
 
 useLoader.preload(GLTFLoader, renaultClioGlbPath);
-useLoader.preload(GLTFLoader, hondaPcxGlbPath);
+useLoader.preload(FBXLoader, hondaAdvFbxPath);
